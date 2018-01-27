@@ -1,0 +1,65 @@
+(Источник: <a href="https://habrahabr.ru/post/23066/">Хабрахабр</a>)
+
+Если кратко, новая функциональность позднего статического связывания, позволяет объектам все также наследовать методы у 
+родительских классов, но помимо этого дает возможность унаследованным методам иметь доступ к статическим константам, методам и 
+свойствам класса потомка, а не только родительского класса. Пример:
+
+class Beer {
+    const NAME = 'Beer!';
+      public function getName() {
+          return self::NAME;
+    }
+}
+class Ale extends Beer {
+	const NAME = 'Ale!';
+}
+
+$beerDrink = new Beer;
+$aleDrink = new Ale;
+
+echo "Beer is: " . $beerDrink->getName() ."\n";
+echo "Ale is:  " . $aleDrink->getName()  ."\n";
+
+
+Этот код выдаст такой результат:
+
+Beer is: Beer!
+Ale is:  Beer!
+
+
+Класс Ale унаследовал метод getName(), но при этом self все еще указывает на класс в котором оно используется 
+(в данном случае это класс Beer). Это осталось и в PHP 5.3, но добавилось слово static. И снова рассмотрим пример:
+
+class Beer {
+  const NAME = 'Beer!';
+  public function getName() {
+	  return self::NAME;
+  }
+  public function getStaticName() {
+	  return static::NAME;
+  }
+}
+
+class Ale extends Beer {
+  const NAME = 'Ale!';
+}
+
+$beerDrink = new Beer;
+
+$aleDrink = new Ale;
+
+echo "Beer is: " . $beerDrink->getName() ."\n";
+echo "Ale is:  " . $aleDrink->getName()  ."\n";
+
+echo "Beer is actually: " . $beerDrink->getStaticName() ."\n";
+echo "Ale is actually:  " . $aleDrink->getStaticName()  ."\n";
+
+
+Новое ключевое слово static указывает, что необходимо использовать константу унаследованного класса, вместо константы 
+которая была определена в классе где объявлен метод getStaticName(). Слово static было добавлено, чтобы реализовать новый функционал, 
+а для обратной совместимости self работает также как и в предыдущих версиях PHP.
+
+Внутренне, основное отличие (и, собственно, причина почему связывание назвали поздним) между этими двумя способами доступа, в том, 
+что PHP определят значение для self::NAME во время «компиляции» (когда симовлы PHP преобразуются в машинный код, который будет 
+обрабатываться движком Zend), а для static::NAME значение будет определено в момент запуска (в тот момент, когда машинный код будет 
+выполнятся в движке Zend).
